@@ -1,0 +1,44 @@
+LN_IR.txt
+30apr25 ndp
+08may25
+
+Log Notes for a IR Sensor/Receiver driver. 
+
+ref1: tsop38238.pdf - TSOP38238 data sheet.
+ref2: nec_infrared_transmission_protocol-281113-1713-47344.pdf - IR signal protocol
+
+Target: ATtiny AVR SIOC-14 devices (ATtiny814, ATtiny1614, etc.) 5v @ 20MHz.
+
+Files: ir.c, ir.h
+
+The tsop38238 demodulates a standard 38 kHz IR remote signal use by many home electronic devices such as TVs, DVDs, and audio system. It is a three terminal device with power, ground and output. It uses 2.5v to 5.5v for power with its output equal to (Vcc - 0.3v) and provides and Iout of 5ma.
+The output is LOW when a signal is being received and HIGH when there is no signal.
+
+The NEC IR Protocol Message consist of a 9ms SYNC burst followed by a 4ms gap, an 8-bit Address, its inverse, 
+an 8-bit Command, and then its inverse.
+
+A logical '0' is a 562.5us pulse followed by a 562.5us gap.
+A logical '1' is a 562.5us pulse followed by a 1.6875ms gap.
+
+An Interrupt-On-Change interrupt service routine (ISR) will be used to dectect '1's and '0' and the SYNC 
+conditions using a simple state machine. It will set a BitReady flag to TRUE and set a BitData register 
+to 0 or 1 based on the bit detected. Upon reading the BitReady flag, the flag will be set to FALSE.
+
+A higher level service routine will poll the ISR, at a rate faster than 500us, and collect results to 
+decode the IR message.
+
+Use millis() to measure gaps (LOWs). >4ms = SYNC, >1ms = 1, else 0. Crude, but should work.
+State machine to find SYNC, Address, Inverted Address, Command, and Inverted Command bytes.
+
+OPTIONAL: Move message decoder into the ISR to allow slower polling.
+08may25
+Initial tests. Correct errors. systime not set to 1ms. ok. INTR not responding to BOTH edges. hmm...
+Not clearing INTR on both edges, only on LOW..DOH..BUG: sysDelay has to be static to be retained.
+Almost. 1ms doesn't seem to be good enough resolution. Back to TCB method.
+
+
+
+
+
+
+

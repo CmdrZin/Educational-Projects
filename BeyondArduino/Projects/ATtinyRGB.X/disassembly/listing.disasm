@@ -1,0 +1,436 @@
+Disassembly Listing for ATtinyRGB
+Generated From:
+C:/Data/Educational/BeyondArduino/Projects/ATtinyRGB.X/dist/default/production/ATtinyRGB.X.production.elf
+Sep 21, 2024 11:46:39 AM
+
+---  C:/Data/Educational/BeyondArduino/Projects/ATtinyRGB.X/systime.c  ----------------------------------
+1:             /*
+2:              * File:   systime.c
+3:              * Author: Cmdrzin
+4:              *
+5:              * Created on August 8, 2024, 12:29 PM
+6:              */
+7:             
+8:             
+9:             #include <avr/io.h>
+10:            #include "systime.h"
+11:            
+12:            volatile static uint32_t totalMilliseconds;	// global variable
+13:            
+14:            /* TCA interrupt service routine. */
+15:            ISR(TCA0_OVF_vect)
+16:            {
+00CB  921F     PUSH R1
+00CC  B61F     IN R1, 0x3F
+00CD  921F     PUSH R1
+00CE  2411     EOR R1, R1
+00CF  938F     PUSH R24
+00D0  939F     PUSH R25
+00D1  93AF     PUSH R26
+00D2  93BF     PUSH R27
+17:               	++totalMilliseconds;
+00D3  9180     LDS R24, 0x3808
+00D5  9190     LDS R25, 0x3809
+00D7  91A0     LDS R26, 0x380A
+00D9  91B0     LDS R27, 0x380B
+00DB  9601     ADIW R24, 0x01
+00DC  1DA1     ADC R26, R1
+00DD  1DB1     ADC R27, R1
+00DE  9380     STS 0x3808, R24
+00E0  9390     STS 0x3809, R25
+00E2  93A0     STS 0x380A, R26
+00E4  93B0     STS 0x380B, R27
+18:                TCA0.SINGLE.INTFLAGS = TCA_SINGLE_OVF_bm;   // clear the interrupt flag
+00E6  E081     LDI R24, 0x01
+00E7  9380     STS 0xA0B, R24
+19:            }
+00E9  91BF     POP R27
+00EA  91AF     POP R26
+00EB  919F     POP R25
+00EC  918F     POP R24
+00ED  901F     POP R1
+00EE  BE1F     OUT 0x3F, R1
+00EF  901F     POP R1
+00F0  9518     RETI
+00F1  E0E0     LDI R30, 0x00
+20:            
+21:            /* Return the total number of milliseconds since the project started. */
+22:            uint32_t millis(void)
+23:            {
+24:            	uint32_t temp;			// make a holder for the counter.
+25:            
+26:            	cli();				// Turn OFF interrupts to avoid corruption
+0123  94F8     CLI
+27:            						// during a multi-byte read.
+28:            	temp = totalMilliseconds;	// get a copy while interrupts are disabled.
+0124  9160     LDS R22, 0x3808
+0126  9170     LDS R23, 0x3809
+0128  9180     LDS R24, 0x380A
+012A  9190     LDS R25, 0x380B
+29:            	sei();				// Turn interrupts back ON.
+012C  9478     SEI
+30:            
+31:            	return temp;			// return a 'clean' copy of the counter.
+32:            }
+012D  9508     RET
+012E  01EC     MOVW R28, R24
+33:            
+34:            /* *** TCA Configuration as NORMAL counter with interrupt for 1ms OVF *** */
+35:            void init_systime(void)
+36:            {
+37:            	TCA0_SINGLE_PER = 0x0D04;       // 3,333 - 1 since the counter starts at 0.
+38:               	/* enable overflow interrupt */
+39:            	TCA0.SINGLE.INTCTRL = TCA_SINGLE_OVF_bm;
+40:            	/* set Normal mode */
+41:            	TCA0.SINGLE.CTRLB = TCA_SINGLE_WGMODE_NORMAL_gc;
+42:            	TCA0.SINGLE.CTRLA = TCA_SINGLE_CLKSEL_DIV1_gc  /* set CLK_PER/64) */
+43:            					| TCA_SINGLE_ENABLE_bm; 	/* start timer */
+44:            
+45:            }
+---  C:/Data/Educational/BeyondArduino/Projects/ATtinyRGB.X/rgb.c  --------------------------------------
+1:             /*
+2:              * File:   rgb.c
+3:              * Author: CmdrZin
+4:              *
+5:              * Created on September 18, 2024, 3:13 PM
+6:              */
+7:             
+8:             
+9:             #include <avr/io.h>
+10:            #include <avr/pgmspace.h>
+11:            
+12:            #include "rgb.h"
+13:            
+14:            #define MAX_LEDS    8
+15:            
+16:            // Byte patterns for colors.
+17:            // Green, Red , Blue
+18:            const GRB_t ledColor[] PROGMEM = {
+19:                {0x00, 0x00, 0x00},         // rBLACK=0
+20:                {0x00, 0xFF, 0x00},         // rRED=1
+21:                {0xFF, 0x00, 0x00},         // rGREEN=2
+22:                {0x00, 0x00, 0xFF},         // rBLUE=3
+23:                {0xFF, 0xFF, 0x00},         // rYELLOW=4
+24:                {0xFF, 0xFF, 0xFF}          // rWHITE=5
+25:            };
+26:            
+27:            RGB_COLOR_t outPattern[] = {
+28:                rRED, rGREEN, rBLACK, rBLUE, rYELLOW, rGREEN, rWHITE, rBLUE
+29:            };
+30:            
+31:            
+32:            void display()
+33:            {
+0111  930F     PUSH R16
+0112  931F     PUSH R17
+0113  93CF     PUSH R28
+0114  93DF     PUSH R29
+0115  E0C0     LDI R28, 0x00
+0116  E3D8     LDI R29, 0x38
+0117  E008     LDI R16, 0x08
+0118  E318     LDI R17, 0x38
+34:                for(int i=0; i<MAX_LEDS; i++) {
+011B  17C0     CP R28, R16
+011C  07D1     CPC R29, R17
+011D  F7D9     BRNE 0x119
+35:                    sendLED(outPattern[i]);         // call ASM function
+0119  9189     LD R24, Y+
+011A  DF5C     RCALL sendLED
+36:                }
+37:            }
+011E  91DF     POP R29
+011F  91CF     POP R28
+0120  911F     POP R17
+0121  910F     POP R16
+0122  9508     RET
+---  C:/Data/Educational/BeyondArduino/Projects/ATtinyRGB.X/main.c  -------------------------------------
+1:             /*
+2:              * File:   main.c
+3:              * Author: CmdrZin
+4:              *
+5:              * Created on September 18, 2024, 3:12 PM
+6:              */
+7:             
+8:             #include <avr/io.h>
+9:             #include "systime.h"
+10:            #include "rgb.h"
+11:            
+12:            #define WAIT_DELAY  10          // n * ms
+13:            
+14:            int main(void) {
+15:                uint32_t    waitTime = 0L;
+00F6  2CC1     MOV R12, R1
+00F7  2CD1     MOV R13, R1
+00F8  0176     MOVW R14, R12
+16:                PORTA.DIR |= PIN3_bm;           // Set PORTA PA3 as OUTPUT
+00F1  E0E0     LDI R30, 0x00
+00F2  E0F4     LDI R31, 0x04
+00F3  8180     LD R24, Z
+00F4  6088     ORI R24, 0x08
+00F5  8380     ST Z, R24
+17:                    
+18:                /* Replace with your application code */
+19:                while (1) {
+20:                    if(millis() > waitTime) {
+00FB  940E     CALL millis
+00FD  16C6     CP R12, R22
+00FE  06D7     CPC R13, R23
+00FF  06E8     CPC R14, R24
+0100  06F9     CPC R15, R25
+0101  F7C8     BRCC 0xFB
+21:                        waitTime = millis() + WAIT_DELAY;
+0102  940E     CALL millis
+0104  016B     MOVW R12, R22
+0105  017C     MOVW R14, R24
+0106  E02A     LDI R18, 0x0A
+0107  0EC2     ADD R12, R18
+0108  1CD1     ADC R13, R1
+0109  1CE1     ADC R14, R1
+010A  1CF1     ADC R15, R1
+22:                        
+23:                        // DEBUG
+24:                        PORTA.OUTTGL |= PIN3_bm;
+00F9  E0C0     LDI R28, 0x00
+00FA  E0D4     LDI R29, 0x04
+010B  818F     LDD R24, Y+7
+010C  6088     ORI R24, 0x08
+010D  838F     STD Y+7, R24
+25:                        
+26:                        display();
+010E  940E     CALL display
+0110  CFEA     RJMP 0xFB
+27:                    }
+28:                }
+29:            }
+---  C:/Data/Educational/BeyondArduino/Projects/ATtinyRGB.X/asm_rgb.s  ----------------------------------
+                                                  1:     /*
+                                                  2:      * File:   rgb.s
+                                                  3:      * Author: CmdrZin
+                                                  4:      *
+                                                  5:      * Created on September 18, 2024, 3:13 PM
+                                                  6:      *     
+                                                  7:      * WS2812B
+                                                  8:      * 0: H:0.40us L:0.85us
+                                                  9:      * 1: H:0.80us L:0.45us
+                                                  10:     * SK6812
+                                                  11:     * 0: H:0.30us L:0.95us
+                                                  12:     * 1: H:0.60us L:0.65us
+                                                  13:     * SKC6812RV
+                                                  14:     * 0: H:0.30us L:0.95us
+                                                  15:     * 1: H:0.80us L:0.45us
+                                                  16:     *
+                                                  17:     * Target: ATtiny AVR Series-1
+                                                  18:     * Uses 20 MHz (0.050 us) CPU clock
+                                                  19:     *
+                                                  20:     * C_ASM_ICD
+                                                  21:     * Can use r18:27, r30:31 in ASM without saving
+                                                  22:     * X:r27,r26	Y:r29,r28	Z:r31,30	r1=0 always
+                                                  23:     */ 
+                                                  24:    #include <xc.h>
+                                                  25:    //#include <avr/io.h>
+                                                  26:        
+                                                  27:    #define DOUT_PORT 0x0404	// PORTA.OUT (0x0404) SFR address. MUST MATCH DEVICE PORT! .. ATtiny412 8SIOC
+                                                  28:    #define DOUT_PIN  3		// MUST MATCH DEVICE PIN! .. ATtiny412 8SIOC
+                                                  29:    
+                                                  30:    .extern ledColor
+                                                  31:        
+                                                  32:    /*
+                                                  33:     * sendLED(RGB_COLOR_t out)
+                                                  34:     *
+                                                  35:     * r25:r24 = out
+                                                  36:     * table has 3 bytes per entry. (see rgb.h GRB_t)
+                                                  37:     * bytes: ledColor[out].green, ledColor[out].red, ledColor[out].blue
+                                                  38:     *
+                                                  39:     * For multiple LEDs, must be called again withing 50us after return.
+                                                  40:     */
+                                                  41:        .section	.text
+                                                  42:        .global	sendLED
+                                                  43:    sendLED:
+                                                  44:        ; multiply index by 3
+0077  2F28     MOV R18, R24                       45:        mov	    r18, r24
+0078  0F88     ADD R24, R24                       46:        add	    r24, r24			; double
+0079  0F82     ADD R24, R18                       47:        add	    r24, r18			; x3
+                                                  48:        ; Z = table
+007A  E0F0     LDI R31, 0x00                      49:        ldi	    ZH, hi8(ledColor)
+007B  EDEC     LDI R30, 0xDC                      50:        ldi	    ZL, lo8(ledColor)
+                                                  51:        ; add index
+007C  0FE8     ADD R30, R24                       52:        add	    ZL, r24
+007D  1DF1     ADC R31, R1                        53:        adc	    ZH, r1			; r1 always 0
+                                                  54:        ; get GREEN color code
+007E  9185     LPM R24, Z+                        55:        lpm	    r24, Z+			; (3)
+007F  D005     RCALL 0x85                         56:        rcall sendByte			; (4)
+                                                  57:        ; get RED color code
+0080  9185     LPM R24, Z+                        58:        lpm	    r24, Z+			; (3)
+0081  D003     RCALL 0x85                         59:        rcall sendByte			; (4)
+                                                  60:        ; get BLUE color code
+0082  9184     LPM R24, Z                         61:        lpm		r24, Z			; (3)
+0083  D001     RCALL 0x85                         62:        rcall sendByte			; (4)
+                                                  63:        ;
+0084  9508     RET                                64:        ret    
+                                                  65:    
+                                                  66:    /*
+                                                  67:     * Send byte to SKC6812RV using stated timing sequence.
+                                                  68:     * WS2812B
+                                                  69:     * 0: H:0.40us L:0.85us
+                                                  70:     * 1: H:0.80us L:0.45us
+                                                  71:     * SK6812
+                                                  72:     * 0: H:0.30us L:0.95us
+                                                  73:     * 1: H:0.60us L:0.65us
+                                                  74:     * SKC6812RV
+                                                  75:     * 0: H:0.30us L:0.95us
+                                                  76:     * 1: H:0.80us L:0.45us
+                                                  77:     *
+                                                  78:     * ASSUMES a 50ns clock (20 MHz)
+                                                  79:     *     
+                                                  80:     * r24 = byte
+                                                  81:     *				; clks		    Accumlative
+                                                  82:     *				; (n)			m
+                                                  83:     */
+                                                  84:    sendByte:
+                                                  85:        ; DISABLE INTERRUPTS. This code is time critical.
+0085  94F8     CLI                                86:        cli
+                                                  87:        ;
+0086  E098     LDI R25, 0x08                      88:        ldi	    r25, 8		; (1) load bit count
+                                                  89:        ;
+                                                  90:    wuLoop01:
+                                                  91:        ; Test bit
+0087  1F88     ADC R24, R24                       92:        rol	    r24		; (1) move test bit into CY
+0088  F0E8     BRCS 0xA6                          93:        brcs    wuSkip01	; (f.1) (t.2) go to Output a 1.
+                                                  94:        ;
+                                                  95:        ; Output a 0 [0.30us]. H for 6 cycles (0.30us)
+                                                  96:    wuLoop02:
+                                                  97:    ;    sbi	    _SFR_IO_ADDR(PORTA), 3   ; SBI does not work with new AVRs
+0089  E0A4     LDI R26, 0x04                      98:        LDI XL, lo8(DOUT_PORT)	; lsb of addr   (1)
+008A  E0B4     LDI R27, 0x04                      99:        LDI XH, hi8(DOUT_PORT)	; msb of addr   (1)
+008B  91AC     LD R26, X                          100:       LD	r26, X			; read PORT	(2)
+008C  60A8     ORI R26, 0x08                      101:       ORI r26, (1<<DOUT_PIN)	; set bit3	(1)
+008D  93AC     ST X, R26                          102:       ST X, r26			; update port   (1)	1
+                                                  103:   ;
+008E  0000     NOP                                104:       nop				; (1)			2
+008F  0000     NOP                                105:       nop				; (1)			3
+0090  0000     NOP                                106:       nop				; (1)			4
+0091  0000     NOP                                107:       nop				; (1)			5
+0092  0000     NOP                                108:       nop				; (1)			6
+                                                  109:       ;
+                                                  110:       ; start L for [0.95us] 19 cycles (0.95us)
+                                                  111:   ;    cbi	    DOUT_PORT, 3   ; (2) Set L for 19 cycles (0.95us) and do next check
+                                                  112:   ; reuse X to access PORT
+0093  91AC     LD R26, X                          113:       LD	r26, X			; read PORT	(2)
+0094  7FA7     ANDI R26, 0xF7                     114:       ANDI r26, ~(1<<DOUT_PIN)	; clear bit3	(1)
+0095  93AC     ST X, R26                          115:       ST X, r26			; update port   (1)	1
+                                                  116:   ; 
+0096  959A     DEC R25                            117:       dec	    r25			; (1) Dec bit count.			3
+0097  F151     BREQ 0xC2                          118:       breq    wuSkip03		; (f.1) (t.2) Finish & Exit if done.	4
+                                                  119:       ; Finish phase 2. Pre-test bit
+0098  1F88     ADC R24, R24                       120:       rol	    r24			; (1) move test bit into CY.		5
+                                                  121:       ; finish out phase-2 before testing
+0099  0000     NOP                                122:       nop				; (1)		6
+009A  0000     NOP                                123:       nop				; (1)		7
+009B  0000     NOP                                124:       nop				; (1)		8
+009C  0000     NOP                                125:       nop				; (1)		9
+009D  0000     NOP                                126:       nop				; (1)		10
+009E  0000     NOP                                127:       nop				; (1)		11
+009F  0000     NOP                                128:       nop				; (1)		12
+00A0  0000     NOP                                129:       nop				; (1)		13
+00A1  0000     NOP                                130:       nop				; (1)		14
+00A2  0000     NOP                                131:       nop				; (1)		15
+00A3  0000     NOP                                132:       nop				; (1)		16
+00A4  0000     NOP                                133:       nop				; (1)		17
+00A5  F718     BRCC 0x89                          134:       brcc    wuLoop02		; (f.1) (t.2) test bit. ouput a 0.	19
+                                                  135:       ;						18
+                                                  136:   wuSkip01:
+                                                  137:       ; Output a 1 [0.60us]. H for 12 cycles (0.60us)
+                                                  138:   ;    sbi	    DOUT_PORT, 3   ; (2) Always start H
+                                                  139:   ; reuse X to access PORT
+00A6  91AC     LD R26, X                          140:       LD	r26, X			; read PORT	(2)
+00A7  60A8     ORI R26, 0x08                      141:       ORI r26, (1<<DOUT_PIN)	; set bit3	(1)
+00A8  93AC     ST X, R26                          142:       ST X, r26			; update port   (1)	1
+                                                  143:   ;
+00A9  0000     NOP                                144:       nop				; (1)		3
+00AA  0000     NOP                                145:       nop				; (1)		4
+00AB  0000     NOP                                146:       nop				; (1)		5
+00AC  0000     NOP                                147:       nop				; (1)		6
+00AD  0000     NOP                                148:       nop				; (1)		7
+00AE  0000     NOP                                149:       nop				; (1)		8
+00AF  0000     NOP                                150:       nop				; (1)		9
+00B0  0000     NOP                                151:       nop				; (1)		10
+00B1  0000     NOP                                152:       nop				; (1)		11
+                                                  153:       ; start L for [0.65us] 13 cycles (0.65us)
+                                                  154:   ;    cbi	    DOUT_PORT, 3   ; (2) Set L for 13 cycles (0.65us) and do next check
+                                                  155:   ; reuse X to access PORT
+00B2  91AC     LD R26, X                          156:       LD	r26, X			; read PORT	(2)
+00B3  7FA7     ANDI R26, 0xF7                     157:       ANDI r26, ~(1<<DOUT_PIN)	; clear bit3	(1)
+00B4  93AC     ST X, R26                          158:       ST X, r26			; update port   (1)	1
+                                                  159:   ;
+00B5  959A     DEC R25                            160:       dec	    r25			; (1) Dec bit count.			3
+00B6  F069     BREQ 0xC4                          161:       breq    wuSkip04		; (f.1) (t.2) Finish & Exit if done.	4
+                                                  162:       ; Finish phase 2. Pre-test bit
+00B7  1F88     ADC R24, R24                       163:       rol	    r24			; (1) move test bit into CY.		5
+00B8  F428     BRCC 0xBE                          164:       brcc    wuSkip02		; (f.1) (t.2) test bit. branch if 0 next.
+00B9  0000     NOP                                165:       nop				; (1)					7
+00BA  0000     NOP                                166:       nop				; (1)					8
+00BB  0000     NOP                                167:       nop				; (1)					9
+00BC  940C     JMP 0xA6                           168:       jmp	    wuSkip01		; (3) ouput a 1 next.			12
+                                                  169:   ;    
+                                                  170:   wuSkip02:			; next bit is a 0
+00BE  0000     NOP                                171:       nop				; (1)					8
+00BF  0000     NOP                                172:       nop				; (1)					9
+00C0  940C     JMP 0x89                           173:       jmp	    wuLoop02		; (3)					12
+                                                  174:       ;						0 end	1 end
+                                                  175:   wuSkip03:			; 0 Exit	6
+00C2  0000     NOP                                176:       nop				; (1)		7
+00C3  0000     NOP                                177:       nop				; (1)		8
+                                                  178:   wuSkip04:
+00C4  0000     NOP                                179:       nop				; (1)		9	6
+00C5  0000     NOP                                180:       nop				; (1)		10	7
+00C6  0000     NOP                                181:       nop				; (1)		11	8
+00C7  0000     NOP                                182:       nop				; (1)		12	9
+00C8  0000     NOP                                183:       nop				; (1)		13	10
+00C9  0000     NOP                                184:       nop				; (1)		14	11
+                                                  185:       ;
+00CA  9508     RET                                186:       ret				; (4)		18	12
+                                                  187:       ; could be reduced. (7) used by code to get next byte.
+                                                  188:       
+---  ././././crt1/gcrt1.S  ------------------------------------------------------------------------------
+0000  940C     JMP __trampolines_start
+0002  940C     JMP __bad_interrupt
+0004  940C     JMP __bad_interrupt
+0006  940C     JMP __bad_interrupt
+0008  940C     JMP __bad_interrupt
+000A  940C     JMP __bad_interrupt
+000C  940C     JMP __bad_interrupt
+000E  940C     JMP __bad_interrupt
+0010  940C     JMP __vector_8
+0012  940C     JMP __bad_interrupt
+0014  940C     JMP __bad_interrupt
+0016  940C     JMP __bad_interrupt
+0018  940C     JMP __bad_interrupt
+001A  940C     JMP __bad_interrupt
+001C  940C     JMP __bad_interrupt
+001E  940C     JMP __bad_interrupt
+0020  940C     JMP __bad_interrupt
+0022  940C     JMP __bad_interrupt
+0024  940C     JMP __bad_interrupt
+0026  940C     JMP __bad_interrupt
+0028  940C     JMP __bad_interrupt
+002A  940C     JMP __bad_interrupt
+002C  940C     JMP __bad_interrupt
+002E  940C     JMP __bad_interrupt
+0030  940C     JMP __bad_interrupt
+0032  940C     JMP __bad_interrupt
+0034  940C     JMP __bad_interrupt
+0036  940C     JMP __bad_interrupt
+0038  940C     JMP __bad_interrupt
+003A  940C     JMP __bad_interrupt
+003C  940C     JMP __bad_interrupt
+0139  940C     JMP init_systime
+013B  940E     CALL _exit
+0044  2411     EOR R1, R1
+0045  BE1F     OUT 0x3F, R1
+0046  EFCF     LDI R28, 0xFF
+0047  BFCD     OUT 0x3D, R28
+0048  E3DF     LDI R29, 0x3F
+0049  BFDE     OUT 0x3E, R29
+004A  E7EC     LDI R30, 0x7C
+0068  940E     CALL main
+006A  940C     JMP exit
