@@ -9,7 +9,7 @@
 #include <avr/io.h>
 #include "io_ctrl.h"
 
-#define LED_RED_PIN_BM PIN3_bm      // RED LED
+#define LED_RED_PIN_BM PIN7_bm      // RED LED
 
 /* *** Initialize the IO PORT *** */
 void init_io(void){
