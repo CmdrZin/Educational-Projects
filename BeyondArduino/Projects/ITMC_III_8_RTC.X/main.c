@@ -17,10 +17,7 @@
 #include "io_ctrl.h"
 #include "rtc.h"
 
-#define LED_DELAY		500UL		// N * 1ms
-
 int main(void) {
-   	uint32_t ledTime = 0UL;
 
     init_systime();             // set up TCA0 timer.
     init_io();                  // set up IO pins.
@@ -31,10 +28,6 @@ int main(void) {
    
     // Read voltage. Set LED based on value.
     while (1) {
-		if( millis() > ledTime ) {
-			ledTime = millis() + LED_DELAY;
-//            toggle_LED();
-            // LED is now toggled by the RTC interrupt.
-		}
+        ;        // LED is now toggled by the RTC interrupt.
     }
 }
