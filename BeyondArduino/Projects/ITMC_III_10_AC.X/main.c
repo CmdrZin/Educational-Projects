@@ -3,6 +3,9 @@
  * Author: Cmdrzin
  *
  * Created on October 30, 2024
+ * 
+ * This is example code for Section III-10 on the Analog Comparator.
+ * 
  */
 
 #include <avr/io.h>
@@ -29,15 +32,15 @@ int main(void) {
 			ledTime = millis() + LED_DELAY;
             /* toggle the LED state. */
             toggle_LED();
+        }
             
-            /* test the input voltage. */
-            if( check_ac() ) {
-                setRedState(true);
-                setGreenState(false);
-            } else {
-                setRedState(false);
-                setGreenState(true);
-            }
-		}
+        /* continously test the input voltage. */
+        if( check_ac() ) {
+            setRedState(true);
+            setGreenState(false);
+        } else {
+            setRedState(false);
+            setGreenState(true);
+        }
     }
 }

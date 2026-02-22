@@ -11,14 +11,15 @@
 
 void init_ac()
 {
-    VREF.CTRLA = 0x02;			// 2.5v ref
-    AC0.MUXCTRLA = 0x02;			// VREF on negative input.
+    VREF.CTRLA = 0x02;			// 2.5v ref (see Section 18.5.1[2])
+
+    AC0.MUXCTRLA = 0x02;		// use VREF for negative input.
     AC0.CTRLA = AC_ENABLE_bm;
 }
 
-/* return true is ADC completed. */
+/* return true if AC input above Ref voltage. */
 bool check_ac()
 {
     // Check AC output state
-    return (AC0.STATUS && 0x10);
+    return (AC0.STATUS & AC_STATE_bm);
 }
