@@ -8,15 +8,15 @@ Zip files of projects can be found at [https://www.gameactive.org/dist/](https:/
 
 ==================
 
-&nbsp;  
+ 
 
-|        Name          | Description                                                |   
+|        Name          | Description                                                |
 
-| -------------------- | ---------------------------------------------------------- |   
+|----------------------|------------------------------------------------------------|
 
-| IntroToArduino | An Educational package on how to program using the Arduino IDE. |   
+| IntroToArduino  | An Educational package on how to program using the Arduino IDE.|
 
-| Beyond Arduino | A guide to learning the AVR series of microcontrollers. |   
+| Beyond Arduino | A guide to learning the AVR series of microcontrollers.|
 
 
 
