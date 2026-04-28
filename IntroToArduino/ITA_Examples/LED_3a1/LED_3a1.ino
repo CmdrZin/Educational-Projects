@@ -22,7 +22,7 @@
 // All initialization should be done in this section.
 void setup() {
   // initialize digital pins for the LEDs as an outputs. 
-  // see Help > Reference > Digital I/O for this information about this and other commands.
+  // see Help > Reference > Digital I/O for information about this and other commands.
   pinMode(LED1, OUTPUT);
   pinMode(LED2, OUTPUT);
   pinMode(LED3, OUTPUT);
@@ -38,33 +38,35 @@ void setup() {
 // It is simple and easy understand and therefore easier to debug.
 void loop() {
   // Blink LED1
+  // see Help > Reference > Digital I/O for information about this and other commands.
   digitalWrite(LED1, HIGH);       // turn the LED on (HIGH is the voltage level)
-  delay(100);                     // wait for a second
+  // see Help > Reference > Time > delay() for information about this function.
+  delay(100);                     // wait for 100ms (1/10th of a second)
   digitalWrite(LED1, LOW);        // turn the LED off by making the voltage LOW
-  delay(100);                    // wait for a second
+  delay(100);                     // wait for 100ms (1/10th of a second)
   // Blink LED2
   digitalWrite(LED2, HIGH);       // turn the LED on (HIGH is the voltage level)
-  delay(100);                     // wait for a second
+  delay(100);                     // wait for 100ms (1/10th of a second)
   digitalWrite(LED2, LOW);        // turn the LED off by making the voltage LOW
-  delay(100);                    // wait for a second
+  delay(100);                     // wait for 100ms (1/10th of a second)
   // Blink LED3
   digitalWrite(LED3, HIGH);       // turn the LED on (HIGH is the voltage level)
-  delay(100);                     // wait for a second
+  delay(100);                     // wait for 100ms (1/10th of a second)
   digitalWrite(LED3, LOW);        // turn the LED off by making the voltage LOW
-  delay(100);                    // wait for a second
+  delay(100);                     // wait for 100ms (1/10th of a second)
   // Blink LED4
   digitalWrite(LED4, HIGH);       // turn the LED on (HIGH is the voltage level)
-  delay(100);                     // wait for a second
+  delay(100);                     // wait for 100ms (1/10th of a second)
   digitalWrite(LED4, LOW);        // turn the LED off by making the voltage LOW
-  delay(100);                    // wait for a second
+  delay(100);                     // wait for 100ms (1/10th of a second)
   // Blink LED5
   digitalWrite(LED5, HIGH);       // turn the LED on (HIGH is the voltage level)
-  delay(100);                     // wait for a second
+  delay(100);                     // wait for 100ms (1/10th of a second)
   digitalWrite(LED5, LOW);        // turn the LED off by making the voltage LOW
-  delay(100);                    // wait for a second
+  delay(100);                     // wait for 100ms (1/10th of a second)
   // Blink LED6
   digitalWrite(LED6, HIGH);       // turn the LED on (HIGH is the voltage level)
-  delay(100);                     // wait for a second
+  delay(100);                     // wait for 100ms (1/10th of a second)
   digitalWrite(LED6, LOW);        // turn the LED off by making the voltage LOW
-  delay(100);                    // wait for a second
+  delay(100);                     // wait for 100ms (1/10th of a second)
 }
