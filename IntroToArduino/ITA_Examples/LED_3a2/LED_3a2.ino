@@ -26,12 +26,10 @@ const char leds[] = {LED1, LED2, LED3, LED4, LED5, LED6};
 void setup() {
   // initialize digital pins for the LEDs as an outputs. 
   // see Help > Reference > Digital I/O for this information about this and other commands.
-  pinMode(LED1, OUTPUT);
-  pinMode(LED2, OUTPUT);
-  pinMode(LED3, OUTPUT);
-  pinMode(LED4, OUTPUT);
-  pinMode(LED5, OUTPUT);
-  pinMode(LED6, OUTPUT);
+  // Use the leds[] array and a for() control to repeat the same function for each LED.
+  for( int i=0; i<sizeof(leds); i++) {
+    pinMode(leds[i], OUTPUT);
+  }
 }
 
 // The loop function runs over and over again forever.
@@ -40,7 +38,7 @@ void setup() {
 // This is an example of using a indexed array as a value table.
 // It uses less code and reuses code sections. This can help isolate bugs.
 void loop() {
-  static int index = 0;           // This value must be retained after exiting the loop() function.
+  static int index = 0;           // This value is static so it is retained after exiting the loop() function.
 
   // Select an LED. leds[0] is the first LED, leds[5] is the last LED.
   char led = leds[index];
