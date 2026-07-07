@@ -4,12 +4,9 @@
 
 #define PUSH_SWITCH  11            // push button switch is connected to pin 11
 
-unsigned long bounceDelay;
-
 void setup() {
   pinMode(PUSH_SWITCH, INPUT_PULLUP);  // use pin 11 as a INPUT. Activate internal pullup resistor.
   pinMode(13, OUTPUT);            // configure to use on-board LED.
-  bounceDelay = 0;
 }
 
 // put your main code here, to run repeatedly:
@@ -25,33 +22,28 @@ void loop() {
 /*
  * Test if the switch is closed.
  * Use the millis() function to filter out switch bounce.
- * Wait for switch to go HIGH before testing again.
+ * Keep returning TRUE until the switch has been released for 10ms.
  */
 bool isSwitchClosed()
 {
-  static bool waitForHigh = false;
+  static unsigned long bounceDelay;
+  static bool waitForRelease = false;
   bool results = false;                         // default value
-
-  // Waiting for the switch to be released?
-  if( !waitForHigh ) {
-    if( digitalRead(PUSH_SWITCH) == LOW ) {       // if switch is pressed
-      bounceDelay = millis() + 10;                // set to wait 10ms.
-      while( bounceDelay > millis() ) {
-        if( digitalRead(PUSH_SWITCH) == HIGH ) {  // keep testing the switch for bounce.
-          bounceDelay = millis() + 10;            // reset delay. Switch bounced.
-        }
-      }
-      results = true;                             // switch is closed and not bouncing.
-      waitForHigh = true;                         // don't test again until released.
-    }
+  // Waiting for the switch to be pressed?
+  if( digitalRead(PUSH_SWITCH) == LOW ) {       // switch is pressed
+      bounceDelay = millis() + 10;                // start wait for release 10ms.
+      waitForRelease = true;
+      results = true;                             // switch is pressed.
   } else {
-    // Yes. Test if released.
-      if( digitalRead(PUSH_SWITCH) == HIGH ) {    // release. clear flag.
-        waitForHigh = false;
+    if( bounceDelay > millis() ) {            // wait for at least 10ms of switch not being pressed.
+      if( digitalRead(PUSH_SWITCH) == LOW ) {  // test the switch for bounce. (i.e. is it closed?)
+        bounceDelay = millis() + 10;           // reset delay. Switch bounced.
       } else {
-        results = true;                           // still pressed.
+        // still not pressed.
+        waitForRelease = false;
+        results = false;
       }
+    }
   }
-
   return results;
 }
