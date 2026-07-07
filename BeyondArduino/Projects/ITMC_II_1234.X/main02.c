@@ -3,8 +3,10 @@
  * Author: Cmdrzin
  *
  * Created on July 31, 2024, 11:03 PM
+ * 
+ * Connect an LED and resistor to PA7.
+ * Use PA1 as an INPUT with it's PULL-UP resistor activated to sense a switch.
  */
-
 
 #include <avr/io.h>
 
